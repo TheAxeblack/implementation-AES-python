@@ -465,6 +465,68 @@ def add_round_key(input_message, key_schedule) -> list[str]:
     ]
     return new_message
 
+
+
+def key_expansion(key:list[str]):
+    def sub_word(word):
+        result = []
+        for byte in word:
+            if len(byte) < 4:
+                x = 0
+                y = int(byte[2], 16)
+            else:
+                x = int(byte[2], 16)
+                y = int(byte[3], 16)
+            result.append(S_Box[x][y])
+        return result
+
+    def rot_word(word):
+        return word[1:] + word[:1]
+
+    def xor_words(w1, w2):
+        return [hex(int(a, 16) ^ int(b, 16)) for a, b in zip(w1, w2)]
+
+    def gmul(a, b):
+        """Multiplication dans GF(2^8)"""
+        p = 0
+        for _ in range(8):
+            if b & 1:
+                p ^= a
+            hi = a & 0x80
+            a = (a << 1) & 0xFF
+            if hi:
+                a ^= 0x1B
+            b >>= 1
+        return p
+
+    def rcon(i):
+        return [hex(gmul(0x02, 1 << (i - 1))), "0x00", "0x00", "0x00"]
+
+    i: int = 0
+
+    w: list[Any]= [None] * (NB * (NR + 1))
+
+    while i < NK:
+        w[i] = [key[4 * i], key[4 * i + 1], key[4 * i + 2], key[4 * i + 3]]
+        i += 1
+
+    i = NK
+    
+    while i < NB * (NR + 1):
+        temp = w[i - 1]
+
+        if i % NK == 0:
+            temp = sub_word(rot_word(temp))
+            temp = xor_words(temp, rcon(i // NK))
+        elif NK > 6 and i % NK == 4:
+            temp = sub_word(temp)
+
+        w[i] = xor_words(w[i - NK], temp)
+        i += 1
+
+    return w
+
+
 def main(inp) -> None:
     print(inp)
     state = add_round_key(inp, key)
@@ -481,3 +543,12 @@ def main(inp) -> None:
 
 if __name__ == "__main__":
     main(message)
+    
+    expanded_keys = key_expansion(key)
+    
+    print("\n[DEBUG] Expanded Keys:")
+    for i in range(NR + 1):
+        round_key = []
+        for j in range(NB):
+            round_key.extend(expanded_keys[i * NB + j])
+        print(f"Round {i} Key: {round_key}")
