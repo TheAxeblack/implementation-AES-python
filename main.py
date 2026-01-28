@@ -153,8 +153,16 @@ def key_expansion(key: State) -> KeySchedule:
         return [a ^ b for a, b in zip(w1, w2)]
 
     def rcon(i: int) -> Word:
-        return [gmul(0x02, 1 << (i - 1)), 0x00, 0x00, 0x00]
-
+        c = 0x01
+        
+        for _ in range(i - 1):
+            c <<= 1
+            if c & 0x100:
+                c ^= 0x11B
+        
+        return [c & 0xFF, 0x00, 0x00, 0x00]
+    
+    
     w: KeySchedule = [None] * (NB * (NR + 1))  # type: ignore[list-item]
 
     i = 0
@@ -166,21 +174,36 @@ def key_expansion(key: State) -> KeySchedule:
 
     while i < NB * (NR + 1):
         temp = w[i - 1]
-
+        # print("[DEBUG] i (dec):", i, end=" ")
+        # print(" temp :", end=" ")
+        # print("".join(f"{byte:02X}" for byte in temp), end=" ")
         if i % NK == 0:
+            # print("after rot_word:", end=" ")
+            # print("".join(f"{byte:02X}" for byte in temp), end=" ")
             temp = sub_word(rot_word(temp))
+            # print("after sub_word:", end=" ")
+            # print("".join(f"{byte:02X}" for byte in temp), end=" ")
+            # print("Rcon[i/NK]:", end=" ")
+            # print("".join(f"{byte:02X}" for byte in rcon(int(i / NK))), end=" ")
             temp = xor_words(temp, rcon(i // NK))
+            # print("After XOR with Rcon :", end=" ")
+            # print("".join(f"{byte:02X}" for byte in temp), end=" ")
         elif NK > 6 and i % NK == 4:
             temp = sub_word(temp)
 
         w[i] = xor_words(w[i - NK], temp)
+        # print("[DEBUG] w[i] :", end=" ")
+        # print("".join(f"{byte:02X}" for byte in w[i]))
         i += 1
 
     return w
 
 
 def main(inp: State) -> None:
-    print(" ".join(f"0x{byte:02X}" for byte in inp))
+    print("[DEBUG] Input :", end=" ")
+    print(" ".join(f"{byte:02X}" for byte in inp))
+    print("[DEBUG] Key :", end=" ")
+    print(" ".join(f"{byte:02X}" for byte in key))
     state = add_round_key(inp, key)
     print("[DEBUG] step add_round_key :", end=" ")
     print(" ".join(f"0x{byte:02X}" for byte in state))
@@ -195,7 +218,7 @@ def main(inp: State) -> None:
     print(" ".join(f"0x{byte:02X}" for byte in state))
     state = add_round_key(state, key2)
     print("[DEBUG] step add_round_key :", end=" ")
-    print(" ".join(f"0x{byte:02X}" for byte in state))
+    print(" ".join(f"0x{byte:02X}" for byte in state), end="\n\n")
 
 
 if __name__ == "__main__":
