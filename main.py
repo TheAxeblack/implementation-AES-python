@@ -326,30 +326,10 @@ def inv_mix_columns(state: State) -> State:
 
     for c in range(NB):
         col = [m[r][c] for r in range(NB)]
-        result[0][c] = (
-                gmul(col[0], 0x0E)
-                ^ gmul(col[1], 0x0B)
-                ^ gmul(col[2], 0x0D)
-                ^ gmul(col[3], 0x09)
-        )
-        result[1][c] = (
-                gmul(col[0], 0x09)
-                ^ gmul(col[1], 0x0E)
-                ^ gmul(col[2], 0x0B)
-                ^ gmul(col[3], 0x0D)
-        )
-        result[2][c] = (
-                gmul(col[0], 0x0D)
-                ^ gmul(col[1], 0x09)
-                ^ gmul(col[2], 0x0E)
-                ^ gmul(col[3], 0x0B)
-        )
-        result[3][c] = (
-                gmul(col[0], 0x0B)
-                ^ gmul(col[1], 0x0D)
-                ^ gmul(col[2], 0x09)
-                ^ gmul(col[3], 0x0E)
-        )
+        result[0][c] = (gmul(col[0], 0x0E) ^ gmul(col[1], 0x0B) ^ gmul(col[2], 0x0D) ^ gmul(col[3], 0x09))
+        result[1][c] = (gmul(col[0], 0x09) ^ gmul(col[1], 0x0E) ^ gmul(col[2], 0x0B) ^ gmul(col[3], 0x0D))
+        result[2][c] = (gmul(col[0], 0x0D) ^ gmul(col[1], 0x09) ^ gmul(col[2], 0x0E) ^ gmul(col[3], 0x0B))
+        result[3][c] = (gmul(col[0], 0x0B) ^ gmul(col[1], 0x0D) ^ gmul(col[2], 0x09) ^ gmul(col[3], 0x0E))
 
     new_state = [result[r][c] for c in range(NB) for r in range(NB)]
     return new_state
